@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ICM Attendance – MMC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #1a6b3c; --green-light: #e8f5ee; --green-mid: #2d8a55;
+    --amber: #b45309; --amber-light: #fef3c7;
+    --red: #991b1b; --red-light: #fee2e2;
+    --border: #d1d5db; --muted: #6b7280;
+    --bg: #f9fafb; --white: #ffffff; --text: #111827;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header { background: var(--green); color: white; padding: 18px 20px 16px; text-align: center; }
+  .header-logo { font-size: 11px; letter-spacing: 0.08em; opacity: 0.75; text-transform: uppercase; margin-bottom: 4px; }
+  .header h1 { font-size: 18px; font-weight: 600; line-height: 1.3; }
+  .header-date { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+
+  .container { max-width: 500px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+  .card-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f3f4f6; }
+
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  label span { color: var(--muted); font-weight: 400; }
+
+  select, input[type="text"] {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 14px; font-family: 'Inter', sans-serif;
+    color: var(--text); background: white; transition: border-color 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  select:focus, input[type="text"]:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,107,60,0.1); }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px;
+  }
+  input[readonly] { background: #f3f4f6; color: var(--muted); cursor: not-allowed; border-style: dashed; user-select: none; -webkit-user-select: none; }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .posting-box { background: var(--green-light); border: 1.5px solid #86efac; border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .posting-box .posting-name { font-size: 15px; font-weight: 600; color: var(--green); line-height: 1.2; }
+  .posting-box .posting-sub { font-size: 11px; color: var(--green-mid); margin-top: 2px; }
+  .posting-box-empty { background: #f3f4f6; border: 1.5px dashed var(--border); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  .gps-locked-badge { display: inline-flex; align-items: center; gap: 5px; background: #f3f4f6; border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .gps-row { display: flex; gap: 8px; align-items: stretch; }
+  .gps-row input { flex: 1; font-size: 13px; }
+  .btn-gps { background: var(--green); color: white; border: none; border-radius: 8px; padding: 0 16px; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; transition: background 0.15s; flex-shrink: 0; }
+  .btn-gps:hover { background: var(--green-mid); }
+  .btn-gps:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  .gps-status { font-size: 12px; margin-top: 8px; display: flex; align-items: flex-start; gap: 5px; line-height: 1.5; }
+  .gps-status.fetching { color: var(--amber); }
+  .gps-status.success { color: var(--green); }
+  .gps-status.error { color: var(--red); }
+
+  .location-verify { margin-top: 10px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 12px 14px; }
+  .location-verify .verify-title { font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .location-verify .coords-row { font-size: 12px; color: #374151; margin-bottom: 6px; font-family: monospace; background: white; border: 1px solid #d1fae5; border-radius: 6px; padding: 6px 10px; }
+  .accuracy-row { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .accuracy-row.good { color: var(--green); }
+  .accuracy-row.poor { color: var(--amber); }
+  .maps-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--green); color: white; text-decoration: none; border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; width: 100%; justify-content: center; }
+
+  /* Location warning box */
+  .location-warn { margin-top: 10px; background: #fef3c7; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 12px 14px; font-size: 12px; color: #92400e; display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+
+  .tamper-notice { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #92400e; display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+
+  /* Device warning */
+  .device-warn { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #1e40af; display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; margin-bottom: 14px; }
+
+  .btn-submit { width: 100%; background: var(--green); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+  .btn-submit:hover { background: var(--green-mid); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+
+  .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .alert-success { background: var(--green-light); color: var(--green); border: 1px solid #86efac; }
+  .alert-error { background: var(--red-light); color: var(--red); border: 1px solid #fca5a5; }
+  .alert .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Already submitted screen */
+  .already-screen { text-align: center; padding: 40px 20px; display: none; }
+  .already-screen .icon { font-size: 56px; margin-bottom: 14px; }
+  .already-screen h2 { font-size: 20px; font-weight: 600; color: var(--amber); margin-bottom: 8px; }
+  .already-screen p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .already-detail { background: var(--amber-light); border-radius: 10px; padding: 14px; margin: 16px 0; text-align: left; font-size: 13px; color: var(--amber); }
+  .already-detail div { margin-bottom: 5px; }
+
+  .success-screen { text-align: center; padding: 30px 20px; display: none; }
+  .success-screen .tick { font-size: 56px; margin-bottom: 14px; }
+  .success-screen h2 { font-size: 20px; font-weight: 600; color: var(--green); margin-bottom: 8px; }
+  .success-screen p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .success-detail { background: var(--green-light); border-radius: 10px; padding: 14px; margin: 16px 0; text-align: left; font-size: 13px; color: var(--green); }
+  .success-detail div { margin-bottom: 6px; }
+  .success-maps-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--green); color: white; text-decoration: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; margin-top: 10px; }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 20px; padding-bottom: 10px; }
+
+  /* Mode toggle */
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); }
+  .mode-btn { flex: 1; padding: 12px; font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; background: white; color: var(--muted); }
+  .mode-btn.active-attend { background: var(--green); color: white; }
+  .mode-btn.active-leave  { background: var(--amber); color: white; }
+  .mode-btn:first-child { border-right: 1.5px solid var(--border); }
+
+  /* Leave form */
+  .leave-card { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 12px; padding: 20px; margin-bottom: 14px; display: none; }
+  .leave-card .card-title { color: var(--amber); border-bottom-color: #fde68a; }
+  .btn-leave { width: 100%; background: var(--amber); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
+  .btn-leave:hover { background: #92400e; }
+  .btn-leave:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  /* Leave success */
+  .leave-success { text-align: center; padding: 30px 20px; display: none; }
+  .leave-success .icon { font-size: 56px; margin-bottom: 14px; }
+  .leave-success h2 { font-size: 20px; font-weight: 600; color: var(--amber); margin-bottom: 8px; }
+  .leave-success p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .leave-success-detail { background: var(--amber-light); border-radius: 10px; padding: 14px; margin: 16px 0; text-align: left; font-size: 13px; color: var(--amber); }
+  .leave-success-detail div { margin-bottom: 6px; }
+
+  select[id="leaveDate"] { background: white; }
+
+  /* Week Off */
+  .mode-btn.active-weekoff { background: #1d4ed8; color: white; }
+  .weekoff-card { background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 12px; padding: 20px; margin-bottom: 14px; display: none; }
+  .btn-weekoff { width: 100%; background: #1d4ed8; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
+  .btn-weekoff:hover { background: #1e40af; }
+  .btn-weekoff:disabled { background: #9ca3af; cursor: not-allowed; }
+  .weekoff-success { text-align: center; padding: 30px 20px; display: none; }
+  .weekoff-success .icon { font-size: 56px; margin-bottom: 14px; }
+  .weekoff-success h2 { font-size: 20px; font-weight: 600; color: #1d4ed8; margin-bottom: 8px; }
+  .weekoff-success p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .weekoff-success-detail { background: #eff6ff; border-radius: 10px; padding: 14px; margin: 16px 0; text-align: left; font-size: 13px; color: #1d4ed8; }
+  .weekoff-success-detail div { margin-bottom: 6px; }
+</style>
+<!-- FingerprintJS — device fingerprinting across browsers -->
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Madurai Medical College · ICM</div>
+  <h1>Community Medicine Attendance</h1>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<div class="container">
+  <div id="alertArea"></div>
+
+  <!-- Week Off Success Screen -->
+  <div class="weekoff-success" id="weekoffSuccessView">
+    <div class="icon">🏖️</div>
+    <h2>Week Off Marked!</h2>
+    <p>Your week off has been recorded successfully.</p>
+    <div class="weekoff-success-detail" id="weekoffSuccessDetail"></div>
+    <p style="font-size:12px;color:var(--muted)">This counts as present. Enjoy your day off!</p>
+  </div>
+
+  <!-- Leave Success Screen -->
+  <div class="leave-success" id="leaveSuccessView">
+    <div class="icon">📋</div>
+    <h2>Leave Applied!</h2>
+    <p>Your leave request has been submitted.</p>
+    <div class="leave-success-detail" id="leaveSuccessDetail"></div>
+    <p style="font-size:12px;color:var(--muted)">Your professor will be notified. You may close this page.</p>
+  </div>
+
+  <!-- Already submitted screen -->
+  <div class="already-screen" id="alreadyView">
+    <div class="icon">⚠️</div>
+    <h2>Already Submitted Today</h2>
+    <p>Attendance has already been recorded from this browser today.</p>
+    <div class="already-detail" id="alreadyDetail"></div>
+    <p style="font-size:12px;color:var(--muted)">If you believe this is an error, contact your department at icmmdmccrmi@gmail.com</p>
+  </div>
+
+  <!-- Main Form -->
+  <div id="formView">
+
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn active-attend" id="btnAttend" onclick="setMode('attend')">✅ Attendance</button>
+      <button class="mode-btn" id="btnLeave" onclick="setMode('leave')">📋 Leave</button>
+      <button class="mode-btn" id="btnWeekoff" onclick="setMode('weekoff')" style="display:none">🏖️ Week Off</button>
+    </div>
+
+    <!-- Device warning for non-mobile -->
+    <div id="deviceWarn" class="device-warn" style="display:none">
+      <span style="font-size:15px;flex-shrink:0">📱</span>
+      <span><strong>Please use your mobile phone</strong> for accurate GPS location. Submitting from a tablet or laptop may give incorrect coordinates.</span>
+    </div>
+
+    <!-- Intern Details -->
+    <div class="card attend-only" id="nameSelectCard">
+      <div class="card-title">Intern Details</div>
+      <div class="field">
+        <label for="nameSelect">Your Name</label>
+        <select id="nameSelect" onchange="onNameChange()">
+          <option value="">— Select your name —</option>
+          <optgroup label="Group C1">
+            <option value="MADHUSRI ER|C1">MADHUSRI ER</option>
+            <option value="MATHANRAJ P|C1">MATHANRAJ P</option>
+            <option value="MATHIVATHANI S|C1">MATHIVATHANI S</option>
+            <option value="MEENADHARSHINI M|C1">MEENADHARSHINI M</option>
+          </optgroup>
+          <optgroup label="Group C2">
+            <option value="MIRUN R|C2">MIRUN R</option>
+            <option value="MOHAMED ABID M|C2">MOHAMED ABID M</option>
+            <option value="MOHAMMED AMIN SAFIYULRAHMAN|C2">MOHAMMED AMIN SAFIYULRAHMAN</option>
+            <option value="MOHAN B|C2">MOHAN B</option>
+          </optgroup>
+          <optgroup label="Group C3">
+            <option value="MOHANKUMAR M|C3">MOHANKUMAR M</option>
+            <option value="MONEESHA B|C3">MONEESHA B</option>
+            <option value="MOTHI SHREE S|C3">MOTHI SHREE S</option>
+            <option value="MOULISHWER S|C3">MOULISHWER S</option>
+          </optgroup>
+          <optgroup label="Group C4">
+            <option value="MUHESH T|C4">MUHESH T</option>
+            <option value="NAFEES AHAMED|C4">NAFEES AHAMED</option>
+            <option value="NAGANANDHINI S|C4">NAGANANDHINI S</option>
+            <option value="NAGARAJ R|C4">NAGARAJ R</option>
+          </optgroup>
+          <optgroup label="Group C5">
+            <option value="NANDHA GOPAL B S|C5">NANDHA GOPAL B S</option>
+            <option value="NASEEHAH AMIN|C5">NASEEHAH AMIN</option>
+            <option value="NASIF ABDULLA|C5">NASIF ABDULLA</option>
+            <option value="NAVEEN BALA K V|C5">NAVEEN BALA K V</option>
+          </optgroup>
+          <optgroup label="Group C6">
+            <option value="NAYSHIKARUBY S|C6">NAYSHIKARUBY S</option>
+            <option value="NEERAJA M|C6">NEERAJA M</option>
+            <option value="NEHA S|C6">NEHA S</option>
+            <option value="NETHRA LAKSHMI V|C6">NETHRA LAKSHMI V</option>
+          </optgroup>
+          <optgroup label="Group C7">
+            <option value="NIHAL BAIJU|C7">NIHAL BAIJU</option>
+            <option value="NIKHIL KULHARI|C7">NIKHIL KULHARI</option>
+            <option value="NISHANTH T|C7">NISHANTH T</option>
+            <option value="POOARASAN R|C7">POOARASAN R</option>
+          </optgroup>
+          <optgroup label="Group C8">
+            <option value="PRAJEETRAJ S|C8">PRAJEETRAJ S</option>
+            <option value="RADHIKA G|C8">RADHIKA G</option>
+            <option value="RAGHURAM S|C8">RAGHURAM S</option>
+            <option value="RAJESH V|C8">RAJESH V</option>
+          </optgroup>
+          <optgroup label="Group C9">
+            <option value="RAMACHANDRAN S M|C9">RAMACHANDRAN S M</option>
+            <option value="RAMANUJA SIDDHARTH R|C9">RAMANUJA SIDDHARTH R</option>
+            <option value="RAMASAMYJANAGAN S|C9">RAMASAMYJANAGAN S</option>
+            <option value="RENGANATH S|C9">RENGANATH S</option>
+          </optgroup>
+          <optgroup label="Group C10">
+            <option value="RISHI RAGAV KARTHIK T|C10">RISHI RAGAV KARTHIK T</option>
+            <option value="SAHAYA NISHA S|C10">SAHAYA NISHA S</option>
+            <option value="SAHITHYASRI S|C10">SAHITHYASRI S</option>
+            <option value="SAKTHIBALAN S|C10">SAKTHIBALAN S</option>
+          </optgroup>
+          <optgroup label="Group C11">
+            <option value="SAMBATHKUMAR S|C11">SAMBATHKUMAR S</option>
+            <option value="SAMRISH SIVARAM J R|C11">SAMRISH SIVARAM J R</option>
+            <option value="SAMYUKTHA P|C11">SAMYUKTHA P</option>
+            <option value="SANDHIYA A|C11">SANDHIYA A</option>
+          </optgroup>
+          <optgroup label="Group C12">
+            <option value="SANJEEVAN C|C12">SANJEEVAN C</option>
+            <option value="SARAVANAKUMAR V|C12">SARAVANAKUMAR V</option>
+            <option value="SATHANA S|C12">SATHANA S</option>
+          </optgroup>
+          <optgroup label="Group C13">
+            <option value="SATHYA NIVEDA T|C13">SATHYA NIVEDA T</option>
+            <option value="SATHYAJOTHI S A|C13">SATHYAJOTHI S A</option>
+            <option value="SELVAKUMAR T|C13">SELVAKUMAR T</option>
+          </optgroup>
+          <optgroup label="── Sep-Dec Batch ──">
+          </optgroup>
+          <optgroup label="Batch 2 · Group C1">
+            <option value="PRIYANKA|C1|B2">PRIYANKA</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C2">
+            <option value="MOHAMMED SINAN|C2|B2">MOHAMMED SINAN</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C3">
+            <option value="SAMPATH GOWRI|C3|B2">SAMPATH GOWRI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C4">
+            <option value="SANJAI KUMAR|C4|B2">SANJAI KUMAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C5">
+            <option value="PARTHIBAN|C5|B2">PARTHIBAN</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C6">
+            <option value="RITHIKA|C6|B2">RITHIKA</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C7">
+            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C8">
+            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C9">
+            <option value="RUBAN KUMAR|C9|B2">RUBAN KUMAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C10">
+            <option value="RUFAID|C10|B2">RUFAID</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C11">
+            <option value="SAVEETHA MALINI|C11|B2">SAVEETHA MALINI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C12">
+            <option value="NISHANTH RAWAT|C12|B2">NISHANTH RAWAT</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C13">
+            <option value="NARENDRA KUMAR SAINI|C13|B2">NARENDRA KUMAR SAINI</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field">
+        <label>Today's Posting <span>(auto-detected)</span></label>
+        <div id="postingDisplay" class="posting-box-empty">Select your name to see today's posting</div>
+      </div>
+    </div>
+
+    <!-- GPS -->
+    <div class="card attend-only" id="gpsCard">
+      <div class="card-title">📍 Live GPS Location</div>
+      <div class="tamper-notice" style="margin-bottom:14px">
+        <span style="font-size:15px;flex-shrink:0">🔒</span>
+        <span>Location is captured <strong>directly from your device GPS</strong>. It cannot be typed or edited. Your professor can verify it on Google Maps.</span>
+      </div>
+      <div class="field">
+        <div class="gps-locked-badge">🔒 Read-only — device GPS only</div>
+        <div class="gps-row">
+          <input type="text" id="gpsCoords" placeholder="Tap 'Capture GPS' to detect location" readonly
+            oncopy="return false" oncut="return false" onpaste="return false"
+            onkeydown="return false" oncontextmenu="return false" />
+          <button class="btn-gps" id="gpsBtn" onclick="captureGPS()">📍 Capture GPS</button>
+        </div>
+        <div id="gpsStatus" class="gps-status" style="display:none"></div>
+      </div>
+      <div id="locationVerify" style="display:none">
+        <div class="location-verify">
+          <div class="verify-title">✅ Location captured</div>
+          <div class="coords-row" id="coordsDisplay"></div>
+          <div class="accuracy-row" id="accuracyDisplay"></div>
+          <a id="mapsVerifyBtn" href="#" target="_blank" class="maps-btn">🗺 Open in Google Maps to verify</a>
+        </div>
+        <div id="locationWarnBox" class="location-warn" style="display:none">
+          <span style="font-size:15px;flex-shrink:0">⚠️</span>
+          <span id="locationWarnText"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="card attend-only" id="remarksCard">
+      <div class="card-title">Remarks <span style="text-transform:none;font-weight:400">(optional)</span></div>
+      <div class="field">
+        <input type="text" id="remarks" placeholder="e.g. OPD duty, Field visit, MMU..." />
+      </div>
+    </div>
+
+    <!-- Leave Application Form -->
+    <div class="leave-card" id="leaveCard">
+      <div class="card-title" style="color:var(--amber);border-bottom:1px solid #fde68a;margin-bottom:14px;padding-bottom:10px;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">📋 Leave Application</div>
+
+      <div class="field">
+        <label for="leaveName">Your Name</label>
+        <select id="leaveName">
+          <option value="">— Select your name —</option>
+          <optgroup label="Group C1">
+            <option value="MADHUSRI ER|C1">MADHUSRI ER</option>
+            <option value="MATHANRAJ P|C1">MATHANRAJ P</option>
+            <option value="MATHIVATHANI S|C1">MATHIVATHANI S</option>
+            <option value="MEENADHARSHINI M|C1">MEENADHARSHINI M</option>
+          </optgroup>
+          <optgroup label="Group C2">
+            <option value="MIRUN R|C2">MIRUN R</option>
+            <option value="MOHAMED ABID M|C2">MOHAMED ABID M</option>
+            <option value="MOHAMMED AMIN SAFIYULRAHMAN|C2">MOHAMMED AMIN SAFIYULRAHMAN</option>
+            <option value="MOHAN B|C2">MOHAN B</option>
+          </optgroup>
+          <optgroup label="Group C3">
+            <option value="MOHANKUMAR M|C3">MOHANKUMAR M</option>
+            <option value="MONEESHA B|C3">MONEESHA B</option>
+            <option value="MOTHI SHREE S|C3">MOTHI SHREE S</option>
+            <option value="MOULISHWER S|C3">MOULISHWER S</option>
+          </optgroup>
+          <optgroup label="Group C4">
+            <option value="MUHESH T|C4">MUHESH T</option>
+            <option value="NAFEES AHAMED|C4">NAFEES AHAMED</option>
+            <option value="NAGANANDHINI S|C4">NAGANANDHINI S</option>
+            <option value="NAGARAJ R|C4">NAGARAJ R</option>
+          </optgroup>
+          <optgroup label="Group C5">
+            <option value="NANDHA GOPAL B S|C5">NANDHA GOPAL B S</option>
+            <option value="NASEEHAH AMIN|C5">NASEEHAH AMIN</option>
+            <option value="NASIF ABDULLA|C5">NASIF ABDULLA</option>
+            <option value="NAVEEN BALA K V|C5">NAVEEN BALA K V</option>
+          </optgroup>
+          <optgroup label="Group C6">
+            <option value="NAYSHIKARUBY S|C6">NAYSHIKARUBY S</option>
+            <option value="NEERAJA M|C6">NEERAJA M</option>
+            <option value="NEHA S|C6">NEHA S</option>
+            <option value="NETHRA LAKSHMI V|C6">NETHRA LAKSHMI V</option>
+          </optgroup>
+          <optgroup label="Group C7">
+            <option value="NIHAL BAIJU|C7">NIHAL BAIJU</option>
+            <option value="NIKHIL KULHARI|C7">NIKHIL KULHARI</option>
+            <option value="NISHANTH T|C7">NISHANTH T</option>
+            <option value="POOARASAN R|C7">POOARASAN R</option>
+          </optgroup>
+          <optgroup label="Group C8">
+            <option value="PRAJEETRAJ S|C8">PRAJEETRAJ S</option>
+            <option value="RADHIKA G|C8">RADHIKA G</option>
+            <option value="RAGHURAM S|C8">RAGHURAM S</option>
+            <option value="RAJESH V|C8">RAJESH V</option>
+          </optgroup>
+          <optgroup label="Group C9">
+            <option value="RAMACHANDRAN S M|C9">RAMACHANDRAN S M</option>
+            <option value="RAMANUJA SIDDHARTH R|C9">RAMANUJA SIDDHARTH R</option>
+            <option value="RAMASAMYJANAGAN S|C9">RAMASAMYJANAGAN S</option>
+            <option value="RENGANATH S|C9">RENGANATH S</option>
+          </optgroup>
+          <optgroup label="Group C10">
+            <option value="RISHI RAGAV KARTHIK T|C10">RISHI RAGAV KARTHIK T</option>
+            <option value="SAHAYA NISHA S|C10">SAHAYA NISHA S</option>
+            <option value="SAHITHYASRI S|C10">SAHITHYASRI S</option>
+            <option value="SAKTHIBALAN S|C10">SAKTHIBALAN S</option>
+          </optgroup>
+          <optgroup label="Group C11">
+            <option value="SAMBATHKUMAR S|C11">SAMBATHKUMAR S</option>
+            <option value="SAMRISH SIVARAM J R|C11">SAMRISH SIVARAM J R</option>
+            <option value="SAMYUKTHA P|C11">SAMYUKTHA P</option>
+            <option value="SANDHIYA A|C11">SANDHIYA A</option>
+          </optgroup>
+          <optgroup label="Group C12">
+            <option value="SANJEEVAN C|C12">SANJEEVAN C</option>
+            <option value="SARAVANAKUMAR V|C12">SARAVANAKUMAR V</option>
+            <option value="SATHANA S|C12">SATHANA S</option>
+          </optgroup>
+          <optgroup label="Group C13">
+            <option value="SATHYA NIVEDA T|C13">SATHYA NIVEDA T</option>
+            <option value="SATHYAJOTHI S A|C13">SATHYAJOTHI S A</option>
+            <option value="SELVAKUMAR T|C13">SELVAKUMAR T</option>
+          </optgroup>
+          <optgroup label="── Sep-Dec Batch ──">
+          </optgroup>
+          <optgroup label="Batch 2 · Group C1">
+            <option value="PRIYANKA|C1|B2">PRIYANKA</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C2">
+            <option value="MOHAMMED SINAN|C2|B2">MOHAMMED SINAN</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C3">
+            <option value="SAMPATH GOWRI|C3|B2">SAMPATH GOWRI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C4">
+            <option value="SANJAI KUMAR|C4|B2">SANJAI KUMAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C5">
+            <option value="PARTHIBAN|C5|B2">PARTHIBAN</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C6">
+            <option value="RITHIKA|C6|B2">RITHIKA</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C7">
+            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C8">
+            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C9">
+            <option value="RUBAN KUMAR|C9|B2">RUBAN KUMAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C10">
+            <option value="RUFAID|C10|B2">RUFAID</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C11">
+            <option value="SAVEETHA MALINI|C11|B2">SAVEETHA MALINI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C12">
+            <option value="NISHANTH RAWAT|C12|B2">NISHANTH RAWAT</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C13">
+            <option value="NARENDRA KUMAR SAINI|C13|B2">NARENDRA KUMAR SAINI</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Leave Period</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">From</div>
+            <input type="date" id="leaveFrom"
+              style="width:100%;border:1.5px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:14px;font-family:Inter,sans-serif;background:white;"
+              min="2026-08-05" max="2026-11-03" onchange="updateLeaveDays()" />
+          </div>
+          <div style="font-size:18px;color:var(--muted);padding-top:18px;">→</div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">To</div>
+            <input type="date" id="leaveTo"
+              style="width:100%;border:1.5px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:14px;font-family:Inter,sans-serif;background:white;"
+              min="2026-08-05" max="2026-11-03" onchange="updateLeaveDays()" />
+          </div>
+        </div>
+        <div id="leaveDaysCount" style="font-size:12px;color:var(--amber);margin-top:6px;font-weight:500;"></div>
+      </div>
+
+      <div class="field">
+        <label for="leaveReason">Reason for Leave</label>
+        <select id="leaveReason" style="border-color:#fcd34d;">
+          <option value="">— Select reason —</option>
+          <option value="Medical / Health issue">Medical / Health issue</option>
+          <option value="Family emergency">Family emergency</option>
+          <option value="Examination / Test">Examination / Test</option>
+          <option value="Personal reason">Personal reason</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="leaveDetails">Additional details <span>(optional)</span></label>
+        <input type="text" id="leaveDetails" placeholder="Any additional information..." style="border-color:#fcd34d;" />
+      </div>
+
+      <button class="btn-leave" id="leaveBtn" onclick="submitLeave()">📋 Submit Leave Application</button>
+    </div>
+
+    <!-- Week Off Form -->
+    <div class="weekoff-card" id="weekoffCard">
+      <div style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#1d4ed8;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #bfdbfe;">🏖️ Mark Week Off</div>
+
+      <div class="field">
+        <label for="weekoffName">Your Name</label>
+        <select id="weekoffName" style="border-color:#93c5fd;">
+          <option value="">— Select your name —</option>
+          <optgroup label="Group C1">
+            <option value="MADHUSRI ER|C1">MADHUSRI ER</option>
+            <option value="MATHANRAJ P|C1">MATHANRAJ P</option>
+            <option value="MATHIVATHANI S|C1">MATHIVATHANI S</option>
+            <option value="MEENADHARSHINI M|C1">MEENADHARSHINI M</option>
+          </optgroup>
+          <optgroup label="Group C2">
+            <option value="MIRUN R|C2">MIRUN R</option>
+            <option value="MOHAMED ABID M|C2">MOHAMED ABID M</option>
+            <option value="MOHAMMED AMIN SAFIYULRAHMAN|C2">MOHAMMED AMIN SAFIYULRAHMAN</option>
+            <option value="MOHAN B|C2">MOHAN B</option>
+          </optgroup>
+          <optgroup label="Group C3">
+            <option value="MOHANKUMAR M|C3">MOHANKUMAR M</option>
+            <option value="MONEESHA B|C3">MONEESHA B</option>
+            <option value="MOTHI SHREE S|C3">MOTHI SHREE S</option>
+            <option value="MOULISHWER S|C3">MOULISHWER S</option>
+          </optgroup>
+          <optgroup label="Group C4">
+            <option value="MUHESH T|C4">MUHESH T</option>
+            <option value="NAFEES AHAMED|C4">NAFEES AHAMED</option>
+            <option value="NAGANANDHINI S|C4">NAGANANDHINI S</option>
+            <option value="NAGARAJ R|C4">NAGARAJ R</option>
+          </optgroup>
+          <optgroup label="Group C5">
+            <option value="NANDHA GOPAL B S|C5">NANDHA GOPAL B S</option>
+            <option value="NASEEHAH AMIN|C5">NASEEHAH AMIN</option>
+            <option value="NASIF ABDULLA|C5">NASIF ABDULLA</option>
+            <option value="NAVEEN BALA K V|C5">NAVEEN BALA K V</option>
+          </optgroup>
+          <optgroup label="Group C6">
+            <option value="NAYSHIKARUBY S|C6">NAYSHIKARUBY S</option>
+            <option value="NEERAJA M|C6">NEERAJA M</option>
+            <option value="NEHA S|C6">NEHA S</option>
+            <option value="NETHRA LAKSHMI V|C6">NETHRA LAKSHMI V</option>
+          </optgroup>
+          <optgroup label="Group C7">
+            <option value="NIHAL BAIJU|C7">NIHAL BAIJU</option>
+            <option value="NIKHIL KULHARI|C7">NIKHIL KULHARI</option>
+            <option value="NISHANTH T|C7">NISHANTH T</option>
+            <option value="POOARASAN R|C7">POOARASAN R</option>
+          </optgroup>
+          <optgroup label="Group C8">
+            <option value="PRAJEETRAJ S|C8">PRAJEETRAJ S</option>
+            <option value="RADHIKA G|C8">RADHIKA G</option>
+            <option value="RAGHURAM S|C8">RAGHURAM S</option>
+            <option value="RAJESH V|C8">RAJESH V</option>
+          </optgroup>
+          <optgroup label="Group C9">
+            <option value="RAMACHANDRAN S M|C9">RAMACHANDRAN S M</option>
+            <option value="RAMANUJA SIDDHARTH R|C9">RAMANUJA SIDDHARTH R</option>
+            <option value="RAMASAMYJANAGAN S|C9">RAMASAMYJANAGAN S</option>
+            <option value="RENGANATH S|C9">RENGANATH S</option>
+          </optgroup>
+          <optgroup label="Group C10">
+            <option value="RISHI RAGAV KARTHIK T|C10">RISHI RAGAV KARTHIK T</option>
+            <option value="SAHAYA NISHA S|C10">SAHAYA NISHA S</option>
+            <option value="SAHITHYASRI S|C10">SAHITHYASRI S</option>
+            <option value="SAKTHIBALAN S|C10">SAKTHIBALAN S</option>
+          </optgroup>
+          <optgroup label="Group C11">
+            <option value="SAMBATHKUMAR S|C11">SAMBATHKUMAR S</option>
+            <option value="SAMRISH SIVARAM J R|C11">SAMRISH SIVARAM J R</option>
+            <option value="SAMYUKTHA P|C11">SAMYUKTHA P</option>
+            <option value="SANDHIYA A|C11">SANDHIYA A</option>
+          </optgroup>
+          <optgroup label="Group C12">
+            <option value="SANJEEVAN C|C12">SANJEEVAN C</option>
+            <option value="SARAVANAKUMAR V|C12">SARAVANAKUMAR V</option>
+            <option value="SATHANA S|C12">SATHANA S</option>
+          </optgroup>
+          <optgroup label="Group C13">
+            <option value="SATHYA NIVEDA T|C13">SATHYA NIVEDA T</option>
+            <option value="SATHYAJOTHI S A|C13">SATHYAJOTHI S A</option>
+            <option value="SELVAKUMAR T|C13">SELVAKUMAR T</option>
+          </optgroup>
+          <optgroup label="── Sep-Dec Batch ──">
+          </optgroup>
+          <optgroup label="Batch 2 · Group C1">
+            <option value="PRIYANKA|C1|B2">PRIYANKA</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C2">
+            <option value="MOHAMMED SINAN|C2|B2">MOHAMMED SINAN</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C3">
+            <option value="SAMPATH GOWRI|C3|B2">SAMPATH GOWRI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C4">
+            <option value="SANJAI KUMAR|C4|B2">SANJAI KUMAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C5">
+            <option value="PARTHIBAN|C5|B2">PARTHIBAN</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C6">
+            <option value="RITHIKA|C6|B2">RITHIKA</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C7">
+            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C8">
+            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C9">
+            <option value="RUBAN KUMAR|C9|B2">RUBAN KUMAR</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C10">
+            <option value="RUFAID|C10|B2">RUFAID</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C11">
+            <option value="SAVEETHA MALINI|C11|B2">SAVEETHA MALINI</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C12">
+            <option value="NISHANTH RAWAT|C12|B2">NISHANTH RAWAT</option>
+          </optgroup>
+          <optgroup label="Batch 2 · Group C13">
+            <option value="NARENDRA KUMAR SAINI|C13|B2">NARENDRA KUMAR SAINI</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div style="background:#dbeafe;border-radius:8px;padding:12px 14px;font-size:12px;color:#1e40af;margin-bottom:16px;line-height:1.6;">
+        ℹ️ <strong>Week Off rules:</strong><br>
+        • Allowed once per week (Wednesday to Tuesday cycle)<br>
+        • Counts as present — no attendance needed today<br>
+        • Cannot be marked twice in the same week
+      </div>
+
+      <button class="btn-weekoff" id="weekoffBtn" onclick="submitWeekOff()">🏖️ Mark My Week Off</button>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitForm()">✅ Submit Attendance</button>
+    <div class="footer">ICM, Madurai Medical College &nbsp;·&nbsp; CRMI 2021-C</div>
+  </div>
+
+  <!-- Success Screen -->
+  <div class="success-screen" id="successView">
+    <div class="tick">✅</div>
+    <h2>Attendance Recorded!</h2>
+    <p>Your attendance has been submitted and saved.</p>
+    <div class="success-detail" id="successDetail"></div>
+    <p style="font-size:12px;color:var(--muted)">You may close this page. Do not resubmit.</p>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzys6XEoGBlDt5gWmdtjOoIiTPIWKRBGWzPOpvslWoLWQkXRBLM1S0KEF7EzDiYy9ZV/exec';
+
+// ── DEVICE FINGERPRINT ───────────────────────────────────────────
+let deviceId = null;
+async function initFingerprint() {
+  try {
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    deviceId = result.visitorId;
+    console.log('Device fingerprint ready');
+  } catch(e) {
+    // Fallback — generate a session-based ID
+    deviceId = 'fallback_' + Math.random().toString(36).substr(2,9) + '_' + Date.now();
+  }
+}
+// Initialize fingerprint as soon as page loads
+initFingerprint();
+
+// ── BATCH 2 SCHEDULE (Sep-Dec 2026, Thu-Wed cycle) ──────────────
+const B2_WEEK_STARTS = [
+  '2026-09-24','2026-10-01','2026-10-08','2026-10-15',
+  '2026-10-22','2026-10-29','2026-11-05','2026-11-12',
+  '2026-11-19','2026-11-26','2026-12-03','2026-12-10','2026-12-17'
+];
+
+function getB2WeekIndex() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = B2_WEEK_STARTS.length-1; i>=0; i--)
+    if (today >= parseLocalDate(B2_WEEK_STARTS[i])) return i;
+  return -1;
+}
+
+function getB2Posting(group) {
+  const weekIdx = getB2WeekIndex();
+  if (weekIdx < 0) return null;
+  const gIdx = parseInt(group.replace('C','')) - 1;
+  return { posting: POSTINGS[(gIdx - weekIdx + 13) % 13], week: weekIdx + 1 };
+}
+
+// ── WEEK OFF ELIGIBLE POSTINGS ───────────────────────────────────
+const WEEKOFF_ELIGIBLE = [
+  'Samayanallur PHC – OP',
+  'Chekkanurani PHC – OP',
+  'Kallandhiri PHC – OP',
+  'Devasagayam UHTC'
+];
+
+// ── AUTO HOLIDAY POSTINGS ─────────────────────────────────────────
+// Every Sunday = auto present
+const SUNDAY_HOLIDAY = [
+  'MTM OP', 'Geriatric Cancer Screening', 'Yoga',
+  'Samayanallur PHC – Outreach', 'Chekkanurani PHC – Outreach', 'Kallandhiri PHC – Outreach',
+  'Devasagayam UHTC'
+];
+// Every Sunday + 2nd Saturday = auto present
+const SECOND_SAT_HOLIDAY = [
+  'Samayanallur PHC – Outreach', 'Chekkanurani PHC – Outreach', 'Kallandhiri PHC – Outreach',
+  'Devasagayam UHTC'
+];
+
+// 2nd Saturdays in posting period
+const SECOND_SATURDAYS = ['08/08/2026','12/09/2026','10/10/2026','14/11/2026','12/12/2026'];
+
+function isSecondSaturday(date) {
+  const d = new Date(date); d.setHours(0,0,0,0);
+  const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  return SECOND_SATURDAYS.includes(dateStr);
+}
+
+function isAutoHoliday(posting, date) {
+  const d = new Date(date); d.setHours(0,0,0,0);
+  const isSunday = d.getDay() === 0;
+  const isSecSat = isSecondSaturday(d);
+  if (isSunday && SUNDAY_HOLIDAY.includes(posting)) return true;
+  if (isSecSat && SECOND_SAT_HOLIDAY.includes(posting)) return true;
+  return false;
+}
+
+// ── POSTING LOCATIONS with coordinates ───────────────────────────
+// strictRadius = 1000m (1km), outreachRadius = 20000m (20km)
+const POSTING_LOCATIONS = {
+  'Samayanallur PHC – OP':        { lat: 9.976699955171972,  lng: 78.04716981073999, radius: 1000,  outreach: false,
+                                    altLat: 9.90292071105141,     altLng: 78.18829379193134,   // Sakkimangalam PHC
+                                    alt2Lat: 9.975574315346725,   alt2Lng: 78.09346888468598 }, // Kovilpaapakudi
+  'Samayanallur PHC – Outreach':  { lat: 9.976699955171972,  lng: 78.04716981073999, radius: 20000, outreach: true,
+                                    altLat: 9.90292071105141,     altLng: 78.18829379193134,
+                                    alt2Lat: 9.975574315346725,   alt2Lng: 78.09346888468598 },
+  'Chekkanurani PHC – OP':        { lat: 9.94916533275113,   lng: 77.96988049698513, radius: 1000,  outreach: false },
+  'Chekkanurani PHC – Outreach':  { lat: 9.94916533275113,   lng: 77.96988049698513, radius: 20000, outreach: true  },
+  'Kallandhiri PHC – OP':         { lat: 10.038888198270273, lng: 78.19873719539746, radius: 1000,  outreach: false,
+                                    altLat: 9.902906383373143, altLng: 78.1883036224295 }, // Sakkimangalam PHC
+  'Kallandhiri PHC – Outreach':   { lat: 10.038888198270273, lng: 78.19873719539746, radius: 20000, outreach: true,
+                                    altLat: 9.902906383373143, altLng: 78.1883036224295 },
+  'Devasagayam UHTC':             { lat: 9.934140610362833,  lng: 78.10557808324954, radius: 1000,  outreach: false },
+  'Balarengapuram GH':            { lat: 9.913121294666999,  lng: 78.13107205121652, radius: 2000,  outreach: false },
+  'Thoppur GH':                   { lat: 9.882565,           lng: 78.011478,         radius: 2000,  outreach: false },
+  'MTM OP':                       { lat: 9.927240,           lng: 78.130085,         radius: 2000,  outreach: false },
+  'Geriatric Cancer Screening':   { lat: 9.927623,           lng: 78.135775,         radius: 2000,  outreach: false },
+  'Diabetology OP':               { lat: 9.927623,           lng: 78.135775,         radius: 2000,  outreach: false },
+  'Yoga':                         { lat: 9.927623,           lng: 78.135775,         radius: 2000,  outreach: false }
+};
+
+// ── SCHEDULE ─────────────────────────────────────────────────────
+const POSTINGS = [
+  'Samayanallur PHC – OP','Samayanallur PHC – Outreach',
+  'Chekkanurani PHC – OP','Chekkanurani PHC – Outreach',
+  'Kallandhiri PHC – OP','Kallandhiri PHC – Outreach',
+  'Devasagayam UHTC','Balarengapuram GH','Thoppur GH',
+  'MTM OP','Geriatric Cancer Screening','Diabetology OP','Yoga'
+];
+// Parse as LOCAL date (not UTC) to avoid timezone shift
+function parseLocalDate(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d); // local midnight, no UTC shift
+}
+
+const WEEK_STARTS = [
+  '2026-08-05','2026-08-12','2026-08-19','2026-08-26',
+  '2026-09-02','2026-09-09','2026-09-16','2026-09-23',
+  '2026-09-30','2026-10-07','2026-10-14','2026-10-21','2026-10-28'
+];
+
+function getWeekIndex() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = WEEK_STARTS.length-1; i>=0; i--)
+    if (today >= parseLocalDate(WEEK_STARTS[i])) return i;
+  return -1;
+}
+function getTodayPosting(group) {
+  const weekIdx = getWeekIndex();
+  if (weekIdx < 0) return null;
+  const gIdx = parseInt(group.replace('C','')) - 1;
+  return { posting: POSTINGS[(gIdx - weekIdx + 13) % 13], week: weekIdx + 1 };
+}
+
+// ── HAVERSINE DISTANCE (metres) ───────────────────────────────────
+function distanceMetres(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── BROWSER LOCK (one submission per browser per day) ─────────────
+function getTodayKey() {
+  const d = new Date();
+  return `icm_submitted_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+}
+function checkAlreadySubmitted() {
+  try {
+    const key = getTodayKey();
+    const data = localStorage.getItem(key);
+    if (data) {
+      const parsed = JSON.parse(data);
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('alreadyView').style.display = 'block';
+      document.getElementById('alreadyDetail').innerHTML =
+        `<div>👤 Submitted as: <strong>${parsed.name}</strong> (${parsed.group})</div>
+         <div>🏥 ${parsed.posting}</div>
+         <div>🕐 ${parsed.time}</div>`;
+      return true;
+    }
+  } catch(e) {} // localStorage blocked (Safari private) — allow submission
+  return false;
+}
+
+// Device-level lock — checks across ALL browsers on same phone
+function checkDeviceLock() {
+  try {
+    const key = 'icm_device_' + getTodayKey();
+    const data = sessionStorage.getItem(key);
+    // Note: sessionStorage is per-tab, so we rely on server check for cross-browser
+    // The real device lock happens server-side using the fingerprint
+  } catch(e) {}
+}
+function markSubmitted(data) {
+  try {
+    localStorage.setItem(getTodayKey(), JSON.stringify(data));
+  } catch(e) {}
+}
+
+// ── DEVICE DETECTION ──────────────────────────────────────────────
+function checkDevice() {
+  const ua = navigator.userAgent.toLowerCase();
+  const isMobile = /android|iphone|ipod/.test(ua);
+  const isTablet = /ipad|tablet/.test(ua) || (navigator.maxTouchPoints > 1 && !/iphone|ipod/.test(ua) && window.innerWidth > 768);
+  if (!isMobile || isTablet) {
+    document.getElementById('deviceWarn').style.display = 'flex';
+  }
+}
+
+// ── HEADER DATE ───────────────────────────────────────────────────
+document.getElementById('headerDate').textContent =
+  new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+// ── INIT ──────────────────────────────────────────────────────────
+checkDevice();
+checkAlreadySubmitted();
+
+// ── NAME CHANGE ───────────────────────────────────────────────────
+function onNameChange() {
+  const val = document.getElementById('nameSelect').value;
+  const disp = document.getElementById('postingDisplay');
+  if (!val) { disp.className='posting-box-empty'; disp.innerHTML="Select your name to see today's posting"; return; }
+  const parts = val.split('|');
+  const group = parts[1];
+  const batch = parts[2] || 'B1';
+  const result = batch === 'B2' ? getB2Posting(group) : getTodayPosting(group);
+  if (!result) { disp.className='posting-box-empty'; disp.innerHTML='⚠️ Posting not scheduled for today'; return; }
+
+  const today = new Date();
+  const autoHoliday = isAutoHoliday(result.posting, today);
+
+  if (autoHoliday) {
+    disp.className='posting-box';
+    disp.style.background='#dbeafe'; disp.style.borderColor='#93c5fd';
+    disp.innerHTML=`<span style="font-size:20px">🏖️</span><div>
+      <div class="posting-name" style="color:#1d4ed8">${result.posting}</div>
+      <div class="posting-sub" style="color:#3b82f6">Group ${group} · Week ${result.week} · 🎉 Auto Holiday today — marked present!</div>
+    </div>`;
+  } else {
+    disp.style.background=''; disp.style.borderColor='';
+    disp.className='posting-box';
+    disp.innerHTML=`<span style="font-size:20px">🏥</span><div>
+      <div class="posting-name">${result.posting}</div>
+      <div class="posting-sub">Group ${group} · Week ${result.week} of 13</div>
+    </div>`;
+  }
+
+  // Show/hide Week Off tab based on posting eligibility
+  const btnWeekoff = document.getElementById('btnWeekoff');
+  const isEligible = WEEKOFF_ELIGIBLE.includes(result.posting);
+  btnWeekoff.style.display = isEligible ? '' : 'none';
+  if (!isEligible && document.getElementById('weekoffCard').style.display === 'block') {
+    setMode('attend'); // switch back to attendance if currently on week off tab
+  }
+
+  // Re-validate location if already captured
+  if (gpsData) validateLocation(result.posting);
+}
+
+// ── GPS ANTI-TAMPER ───────────────────────────────────────────────
+let gpsData = null;
+const gpsField = document.getElementById('gpsCoords');
+let gpsSetAllowed = false;
+const origDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+Object.defineProperty(gpsField, 'value', {
+  get: function() { return origDescriptor.get.call(this); },
+  set: function(v) { if (gpsSetAllowed) origDescriptor.set.call(this, v); }
+});
+function setGPSField(val) { gpsSetAllowed=true; gpsField.value=val; gpsSetAllowed=false; }
+
+function captureGPS() {
+  const btn = document.getElementById('gpsBtn');
+  const status = document.getElementById('gpsStatus');
+  if (!navigator.geolocation) {
+    status.style.display='flex'; status.className='gps-status error';
+    status.textContent='❌ Geolocation not supported on this browser.'; return;
+  }
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Locating…';
+  status.style.display='flex'; status.className='gps-status fetching';
+  status.textContent='⏳ Detecting your location — please wait…';
+  document.getElementById('locationVerify').style.display='none';
+  gpsData=null; setGPSField('');
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const acc = Math.round(pos.coords.accuracy);
+      const ts  = new Date().toISOString();
+      if (acc > 5000) {
+        status.className='gps-status error';
+        status.textContent=`❌ Location accuracy too poor (±${acc}m). Step outside or enable Wi-Fi and try again.`;
+        btn.disabled=false; btn.innerHTML='📍 Try Again'; return;
+      }
+      gpsData = { lat, lng, accuracy: acc, capturedAt: ts };
+      setGPSField(`${lat}, ${lng}`);
+      status.className='gps-status success';
+      status.textContent='✅ Location captured successfully.';
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+      document.getElementById('coordsDisplay').textContent = `Lat: ${lat}   Lng: ${lng}`;
+      const accEl = document.getElementById('accuracyDisplay');
+      accEl.textContent = acc<=50 ? `✅ Accuracy: ±${acc}m (Good)` : acc<=200 ? `⚠️ Accuracy: ±${acc}m (Acceptable)` : `⚠️ Accuracy: ±${acc}m (Low — try outdoors)`;
+      accEl.className = 'accuracy-row ' + (acc<=200?'good':'poor');
+      document.getElementById('mapsVerifyBtn').href = mapsUrl;
+      document.getElementById('locationVerify').style.display='block';
+      btn.disabled=false; btn.innerHTML='📍 Re-capture GPS';
+      // Validate against posting location
+      const nameVal = document.getElementById('nameSelect').value;
+      if (nameVal) {
+        const result = getTodayPosting(nameVal.split('|')[1]);
+        if (result) validateLocation(result.posting);
+      }
+    },
+    (err) => {
+      let msg = '❌ ';
+      if (err.code===1) msg+='Location access denied. Allow location in browser settings.';
+      else if (err.code===2) msg+='Location unavailable. Try enabling Wi-Fi or stepping outside.';
+      else msg+='Timed out. Please try again.';
+      status.className='gps-status error'; status.textContent=msg;
+      btn.disabled=false; btn.innerHTML='📍 Try Again';
+    },
+    { enableHighAccuracy:true, timeout:20000, maximumAge:0 }
+  );
+}
+
+// ── LOCATION VALIDATION ───────────────────────────────────────────
+let locationValid = true;
+let locationDistance = 0;
+
+function validateLocation(posting) {
+  const warnBox = document.getElementById('locationWarnBox');
+  const warnText = document.getElementById('locationWarnText');
+  if (!gpsData || !posting) { warnBox.style.display='none'; locationValid=true; return; }
+
+  const loc = POSTING_LOCATIONS[posting];
+  if (!loc) { warnBox.style.display='none'; locationValid=true; return; }
+
+  // Check distance from primary location
+  const dist = Math.round(distanceMetres(
+    parseFloat(gpsData.lat), parseFloat(gpsData.lng), loc.lat, loc.lng
+  ));
+
+  // Check distance from alternate location if it exists
+  let distAlt = Infinity;
+  if (loc.altLat && loc.altLng) {
+    distAlt = Math.round(distanceMetres(
+      parseFloat(gpsData.lat), parseFloat(gpsData.lng), loc.altLat, loc.altLng
+    ));
+  }
+
+  // Check distance from 3rd location if it exists
+  let distAlt2 = Infinity;
+  if (loc.alt2Lat && loc.alt2Lng) {
+    distAlt2 = Math.round(distanceMetres(
+      parseFloat(gpsData.lat), parseFloat(gpsData.lng), loc.alt2Lat, loc.alt2Lng
+    ));
+  }
+
+  // Use the smallest distance (closest location)
+  const bestDist = Math.min(dist, distAlt, distAlt2);
+  locationDistance = bestDist;
+
+  if (bestDist <= loc.radius) {
+    warnBox.style.display='none';
+    locationValid = true;
+  } else {
+    warnBox.style.display='flex';
+    locationValid = false;
+    if (loc.outreach) {
+      warnText.innerHTML = `📍 You are <strong>${(bestDist/1000).toFixed(1)}km</strong> from your outreach area. For outreach this is allowed. Submission will be flagged for review.`;
+      locationValid = true;
+    } else {
+      const locName = 'your posting location';
+      warnText.innerHTML = `🚫 You are <strong>${(bestDist/1000).toFixed(1)}km</strong> away from ${locName}. Please reach your posting and try again.`;
+      locationValid = false;
+    }
+  }
+}
+
+// ── AUTO HOLIDAY SUBMIT ───────────────────────────────────────────
+async function submitAutoHoliday(nameVal) {
+  const nameParts = nameVal.split('|');
+  const name  = nameParts[0];
+  const group = nameParts[1];
+  const batch = nameParts[2] || 'B1';
+  const result = batch === 'B2' ? getB2Posting(group) : getTodayPosting(group);
+  const posting = result ? result.posting : 'Unknown';
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const dateStr = now.toLocaleDateString('en-IN');
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Submitting…';
+
+  if (!deviceId) {
+    try { const fp = await FingerprintJS.load(); const r = await fp.get(); deviceId = r.visitorId; }
+    catch(e) { deviceId = 'unknown_' + Date.now(); }
+  }
+
+  const payload = {
+    name, group, posting,
+    remarks: 'Auto Holiday',
+    latitude: '', longitude: '', accuracy: '', capturedAt: '',
+    distanceFromPosting: 0,
+    mapsUrl: '',
+    date: dateStr, time: timeStr,
+    deviceId: deviceId,
+    deviceType: 'Auto',
+    autoHoliday: true
+  };
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    const res  = await resp.json();
+    if (res.status === 'ok' || res.status === 'duplicate') {
+      markSubmitted({ name, group, posting, time: timeStr });
+      showSuccess({ name, group, posting: posting + ' (Auto Holiday ✅)', timeStr, dateStr, mapsUrl: '' });
+    } else { throw new Error(res.message || 'Server error'); }
+  } catch(err) {
+    btn.disabled=false; btn.innerHTML='✅ Submit Attendance';
+    showAlert(`Submission failed: ${err.message}. Please try again.`,'error');
+  }
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────
+async function submitForm() {
+  document.getElementById('alertArea').innerHTML='';
+  const nameVal = document.getElementById('nameSelect').value;
+  const remarks = document.getElementById('remarks').value.trim();
+
+  if (!nameVal) { showAlert('Please select your name.','error'); return; }
+
+  // Check auto-holiday — submit without GPS
+  const checkParts = nameVal.split('|');
+  const nameCheck  = checkParts[0];
+  const groupCheck = checkParts[1];
+  const batchCheck = checkParts[2] || 'B1';
+  const resultCheck = batchCheck === 'B2' ? getB2Posting(groupCheck) : getTodayPosting(groupCheck);
+  if (resultCheck && isAutoHoliday(resultCheck.posting, new Date())) {
+    await submitAutoHoliday(nameVal);
+    return;
+  }
+
+  if (!gpsData)  { showAlert('Please capture your GPS location first.','error'); return; }
+  if (!locationValid) { showAlert('You are too far from your posting location. Please reach your posting and submit from there.','error'); return; }
+
+  const nameParts = nameVal.split('|');
+  const name  = nameParts[0];
+  const group = nameParts[1];
+  const batch = nameParts[2] || 'B1';
+  const result = batch === 'B2' ? getB2Posting(group) : getTodayPosting(group);
+  const posting = result ? result.posting : 'Unknown';
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const dateStr = now.toLocaleDateString('en-IN');
+  const mapsUrl = `https://www.google.com/maps?q=${gpsData.lat},${gpsData.lng}`;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Submitting…';
+
+  // Wait for fingerprint if not ready yet
+  if (!deviceId) {
+    try {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      deviceId = result.visitorId;
+    } catch(e) {
+      deviceId = 'unknown_' + Date.now();
+    }
+  }
+
+  // Detect device type
+  const ua = navigator.userAgent.toLowerCase();
+  const isMobileDevice = /android|iphone|ipod/.test(ua);
+  const isTabletDevice = /ipad/.test(ua) || (navigator.maxTouchPoints > 1 && !/iphone|ipod/.test(ua) && window.innerWidth > 768);
+  const deviceType = isMobileDevice ? 'Mobile' : isTabletDevice ? 'Tablet' : 'Laptop/PC';
+
+  const payload = {
+    name, group, posting, remarks,
+    latitude:   gpsData.lat,
+    longitude:  gpsData.lng,
+    accuracy:   gpsData.accuracy,
+    capturedAt: gpsData.capturedAt,
+    distanceFromPosting: locationDistance,
+    mapsUrl,
+    date: dateStr,
+    time: timeStr,
+    deviceId:   deviceId,
+    deviceType: deviceType
+  };
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    const res  = await resp.json();
+    if (res.status === 'ok') {
+      // Browser lock — mark as submitted
+      markSubmitted({ name, group, posting, time: timeStr });
+      showSuccess({ name, group, posting, timeStr, dateStr, mapsUrl });
+    } else if (res.status === 'duplicate') {
+      markSubmitted({ name, group, posting, time: timeStr });
+      document.getElementById('formView').style.display='none';
+      document.getElementById('alreadyView').style.display='block';
+      document.getElementById('alreadyDetail').innerHTML=
+        `<div>👤 <strong>${name}</strong> (${group}) has already submitted today.</div>
+         <div>This is recorded on our server. Contact icmmdmccrmi@gmail.com if this is an error.</div>`;
+    } else if (res.status === 'device_duplicate') {
+      document.getElementById('formView').style.display='none';
+      document.getElementById('alreadyView').style.display='block';
+      document.getElementById('alreadyDetail').innerHTML=
+        `<div>📱 <strong>This device has already been used to submit attendance today.</strong></div>
+         <div style="margin-top:6px">Submitted as: <strong>${res.submittedAs}</strong></div>
+         <div style="margin-top:4px">Each mobile phone can only submit once per day regardless of browser.</div>
+         <div style="margin-top:8px;font-size:11px">Contact icmmdmccrmi@gmail.com if this is an error.</div>`;
+    } else { throw new Error(res.message || 'Server error'); }
+  } catch(err) {
+    btn.disabled=false; btn.innerHTML='✅ Submit Attendance';
+    showAlert(`Submission failed: ${err.message}. Please try again.`,'error');
+  }
+}
+
+function showSuccess({name,group,posting,timeStr,dateStr,mapsUrl}) {
+  document.getElementById('formView').style.display='none';
+  document.getElementById('successView').style.display='block';
+  document.getElementById('successDetail').innerHTML=`
+    <div>👤 <strong>${name}</strong> (${group})</div>
+    <div>🏥 ${posting}</div>
+    <div>🕐 ${timeStr} &nbsp;·&nbsp; ${dateStr}</div>
+    <div style="margin-top:8px"><a href="${mapsUrl}" target="_blank" class="success-maps-btn">🗺 View submitted location</a></div>`;
+}
+
+function showAlert(msg,type) {
+  const icon = type==='error'?'⚠️':'✅';
+  document.getElementById('alertArea').innerHTML=`<div class="alert alert-${type}"><span class="alert-icon">${icon}</span><span>${msg}</span></div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── MODE TOGGLE ───────────────────────────────────────────────────
+function setMode(mode) {
+  const btnAttend  = document.getElementById('btnAttend');
+  const btnLeave   = document.getElementById('btnLeave');
+  const btnWeekoff = document.getElementById('btnWeekoff');
+  const submitBtn  = document.getElementById('submitBtn');
+  const leaveCard  = document.getElementById('leaveCard');
+  const weekoffCard= document.getElementById('weekoffCard');
+
+  // Reset all buttons
+  btnAttend.className  = 'mode-btn';
+  btnLeave.className   = 'mode-btn';
+  btnWeekoff.className = 'mode-btn';
+  submitBtn.style.display = 'none';
+  leaveCard.style.display  = 'none';
+  weekoffCard.style.display= 'none';
+  document.querySelectorAll('.attend-only').forEach(el => el.style.display='none');
+
+  if (mode === 'attend') {
+    btnAttend.className = 'mode-btn active-attend';
+    submitBtn.style.display = 'flex';
+    document.querySelectorAll('.attend-only').forEach(el => el.style.display='block');
+  } else if (mode === 'leave') {
+    btnLeave.className = 'mode-btn active-leave';
+    leaveCard.style.display = 'block';
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('leaveDate').value = today;
+  } else if (mode === 'weekoff') {
+    btnWeekoff.className = 'mode-btn active-weekoff';
+    weekoffCard.style.display = 'block';
+  }
+  document.getElementById('alertArea').innerHTML='';
+}
+
+// ── WEEK CYCLE (Wed–Tue) ─────────────────────────────────────────
+function getWedTueCycleStart(date) {
+  // Returns the most recent Wednesday (start of cycle)
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const day = d.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  // Days since last Wednesday
+  const daysSinceWed = (day + 7 - 3) % 7; // Wed=3
+  d.setDate(d.getDate() - daysSinceWed);
+  return d;
+}
+
+// ── SUBMIT WEEK OFF ───────────────────────────────────────────────
+async function submitWeekOff() {
+  document.getElementById('alertArea').innerHTML='';
+  const nameVal = document.getElementById('weekoffName').value;
+  if (!nameVal) { showAlert('Please select your name.','error'); return; }
+
+  const [name, group] = nameVal.split('|');
+  const woParts = nameVal.split('|');
+  const woBatch = woParts[2] || 'B1';
+  const resultCheck = woBatch === 'B2' ? getB2Posting(woParts[1]) : getTodayPosting(woParts[1]);
+
+  // Client-side eligibility check
+  if (resultCheck && !WEEKOFF_ELIGIBLE.includes(resultCheck.posting)) {
+    showAlert(`❌ Week Off is not applicable for ${resultCheck.posting}. Only PHC-OP and UHTC postings are eligible.`, 'error');
+    return;
+  }
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const dateStr = now.toLocaleDateString('en-IN');
+
+  // Get current Wed–Tue cycle start
+  const cycleStart = getWedTueCycleStart(now);
+  const cycleStartStr = cycleStart.toLocaleDateString('en-IN');
+
+  const btn = document.getElementById('weekoffBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Submitting…';
+
+  if (!deviceId) {
+    try {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      deviceId = result.visitorId;
+    } catch(e) { deviceId = 'unknown_' + Date.now(); }
+  }
+
+  const payload = {
+    type: 'weekoff',
+    name, group,
+    date: dateStr,
+    time: timeStr,
+    cycleStart: cycleStartStr,
+    deviceId: deviceId || 'unknown'
+  };
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    const res  = await resp.json();
+    if (res.status === 'ok') {
+      document.getElementById('formView').style.display='none';
+      document.getElementById('weekoffSuccessView').style.display='block';
+      document.getElementById('weekoffSuccessDetail').innerHTML=`
+        <div>👤 <strong>${name}</strong> (${group})</div>
+        <div>🏖️ Week Off: ${dateStr}</div>
+        <div>🕐 Marked at: ${timeStr}</div>
+        <div style="margin-top:6px;color:#1d4ed8;font-size:11px">Counts as present ✅</div>`;
+    } else if (res.status === 'weekoff_duplicate') {
+      btn.disabled=false; btn.innerHTML='🏖️ Mark My Week Off';
+      showAlert(`❌ You have already taken your week off this week (marked on ${res.markedOn}). Only one week off allowed per Wednesday–Tuesday cycle.`,'error');
+    } else { throw new Error(res.message || 'Server error'); }
+  } catch(err) {
+    btn.disabled=false; btn.innerHTML='🏖️ Mark My Week Off';
+    showAlert(`Submission failed: ${err.message}. Please try again.`,'error');
+  }
+}
+
+// ── SUBMIT LEAVE ──────────────────────────────────────────────────
+// Auto-calculate days when dates change
+function updateLeaveDays() {
+  const fromVal = document.getElementById('leaveFrom').value;
+  const toVal   = document.getElementById('leaveTo').value;
+  const counter = document.getElementById('leaveDaysCount');
+  if (!fromVal || !toVal) { counter.textContent=''; return; }
+  const from = new Date(fromVal); from.setHours(0,0,0,0);
+  const to   = new Date(toVal);   to.setHours(0,0,0,0);
+  if (to < from) {
+    counter.textContent = '⚠️ To date cannot be before From date';
+    counter.style.color = 'var(--red)'; return;
+  }
+  const days = Math.round((to - from) / (1000*60*60*24)) + 1;
+  counter.textContent = `📅 ${days} day${days>1?'s':''} of leave`;
+  counter.style.color = 'var(--amber)';
+  // Auto-set To min to From date
+  document.getElementById('leaveTo').min = fromVal;
+}
+
+async function submitLeave() {
+  document.getElementById('alertArea').innerHTML='';
+  const nameVal   = document.getElementById('leaveName').value;
+  const fromVal   = document.getElementById('leaveFrom').value;
+  const toVal     = document.getElementById('leaveTo').value;
+  const reason    = document.getElementById('leaveReason').value;
+  const details   = document.getElementById('leaveDetails').value.trim();
+
+  if (!nameVal) { showAlert('Please select your name.','error'); return; }
+  if (!fromVal) { showAlert('Please select the leave From date.','error'); return; }
+  if (!toVal)   { showAlert('Please select the leave To date.','error'); return; }
+  if (!reason)  { showAlert('Please select a reason for leave.','error'); return; }
+
+  // Parse date safely — handles both yyyy-mm-dd and dd-mm-yyyy
+  const parseLocal = (str) => {
+    const parts = str.split('-').map(Number);
+    if (parts[0] > 1000) return new Date(parts[0], parts[1]-1, parts[2]); // yyyy-mm-dd
+    return new Date(parts[2], parts[1]-1, parts[0]); // dd-mm-yyyy
+  };
+  const from = parseLocal(fromVal);
+  const to   = parseLocal(toVal);
+  if (to < from) { showAlert('To date cannot be before From date.','error'); return; }
+
+  const days = Math.round((to - from) / (1000*60*60*24)) + 1;
+  if (days > 14) { showAlert('Leave cannot exceed 14 days at a time.','error'); return; }
+
+  const [name, group] = nameVal.split('|');
+
+  // Format dates as dd/MM/yyyy
+  const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const formattedFrom = fmt(from);
+  const formattedTo   = fmt(to);
+  const now = new Date();
+  const submittedAt = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+
+  const btn = document.getElementById('leaveBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Submitting…';
+
+  const payload = {
+    type: 'leave',
+    name: name,
+    group: group,
+    leaveFrom: formattedFrom,
+    leaveTo:   formattedTo,
+    leaveDate: formattedFrom,  // backup field
+    leaveDays: days,
+    reason: reason + (details ? ' — ' + details : ''),
+    submittedAt,
+    deviceId: deviceId || 'unknown'
+  };
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    const res  = await resp.json();
+    if (res.status === 'ok') {
+      document.getElementById('formView').style.display='none';
+      document.getElementById('leaveSuccessView').style.display='block';
+      const dateDisplay = formattedFrom === formattedTo
+        ? `📅 ${formattedFrom}`
+        : `📅 ${formattedFrom} → ${formattedTo} (${days} days)`;
+      document.getElementById('leaveSuccessDetail').innerHTML=`
+        <div>👤 <strong>${name}</strong> (${group})</div>
+        <div>${dateDisplay}</div>
+        <div>📝 Reason: ${reason}${details?' — '+details:''}</div>
+        <div style="margin-top:6px;font-size:11px;">Your professor has been notified.</div>`;
+    } else { throw new Error(res.message || 'Server error'); }
+  } catch(err) {
+    btn.disabled=false; btn.innerHTML='📋 Submit Leave Application';
+    showAlert(`Submission failed: ${err.message}. Please try again.`,'error');
+  }
+}
+</script>
+</body>
+</html>
