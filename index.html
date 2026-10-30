@@ -993,7 +993,9 @@ function captureGPS() {
       // Validate against posting location
       const nameVal = document.getElementById('nameSelect').value;
       if (nameVal) {
-        const result = getTodayPosting(nameVal.split('|')[1]);
+        const parts = nameVal.split('|');
+        const grp = parts[1], bat = parts[2];
+        const result = bat === 'B2' ? getB2Posting(grp) : getTodayPosting(grp);
         if (result) validateLocation(result.posting);
       }
     },
