@@ -306,10 +306,10 @@
             <option value="RITHIKA|C6|B2">RITHIKA</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C7">
-            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
+            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C8">
-            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
+            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C9">
             <option value="RUBAN KUMAR|C9|B2">RUBAN KUMAR</option>
@@ -478,10 +478,10 @@
             <option value="RITHIKA|C6|B2">RITHIKA</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C7">
-            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
+            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C8">
-            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
+            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C9">
             <option value="RUBAN KUMAR|C9|B2">RUBAN KUMAR</option>
@@ -646,10 +646,10 @@
             <option value="RITHIKA|C6|B2">RITHIKA</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C7">
-            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
+            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C8">
-            <option value="NAVEEN SHANKAR|C7|B2">NAVEEN SHANKAR</option>
+            <option value="PUSHPAKARANI|C8|B2">PUSHPAKARANI</option>
           </optgroup>
           <optgroup label="Batch 2 · Group C9">
             <option value="RUBAN KUMAR|C9|B2">RUBAN KUMAR</option>
@@ -721,7 +721,10 @@ const B2_WEEK_STARTS = [
 ];
 
 function getB2WeekIndex() {
-  const today = new Date(); today.setHours(0,0,0,0);
+  // Use IST date to avoid timezone mismatch on non-IST devices
+  const istStr = new Date().toLocaleDateString('en-CA', {timeZone:'Asia/Kolkata'}); // YYYY-MM-DD
+  const [iy,im,id] = istStr.split('-').map(Number);
+  const today = new Date(iy, im-1, id);
   for (let i = B2_WEEK_STARTS.length-1; i>=0; i--)
     if (today >= parseLocalDate(B2_WEEK_STARTS[i])) return i;
   return -1;
@@ -818,7 +821,10 @@ const WEEK_STARTS = [
 ];
 
 function getWeekIndex() {
-  const today = new Date(); today.setHours(0,0,0,0);
+  // Use IST date to avoid timezone mismatch on non-IST devices
+  const istStr = new Date().toLocaleDateString('en-CA', {timeZone:'Asia/Kolkata'}); // YYYY-MM-DD
+  const [iy,im,id] = istStr.split('-').map(Number);
+  const today = new Date(iy, im-1, id);
   for (let i = WEEK_STARTS.length-1; i>=0; i--)
     if (today >= parseLocalDate(WEEK_STARTS[i])) return i;
   return -1;
